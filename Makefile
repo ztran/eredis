@@ -1,33 +1,31 @@
-APP=eredis
+.PHONY: all clean compile deps distclean release
+REBAR := $(shell which ./rebar || which rebar)
 
-PRE17 := $(shell ERL_FLAGS="" erl -eval 'io:format("~s~n", [case re:run(erlang:system_info(otp_release), "^R") of nomatch -> ""; _ -> pre17 end]), halt().' -noshell)
+all: deps compile
 
-.PHONY: all compile clean Emakefile
+compile: deps
+	./amqp.sh
+	$(REBAR) compile
 
-all: compile
-
-compile: ebin/$(APP).app Emakefile
-	erl -noinput -eval 'up_to_date = make:all()' -s erlang halt
+deps:
+	$(REBAR) get-deps
 
 clean:
-	rm -f -- ebin/*.beam Emakefile ebin/$(APP).app
+	$(REBAR) clean
+	rm -rf ./ebin
+	rm -rf ./logs
+	rm -f ./erl_crash.dump
+	rm -rf ./.eunit
+	rm -f ./test/*.beam
+	rm -rf ./rel/bs_selector
 
-ebin/$(APP).app: src/$(APP).app.src
-	mkdir -p ebin
-	cp -f -- $< $@
+distclean: clean
+	$(REBAR) delete-deps
 
-ifdef DEBUG
-EXTRA_OPTS:=debug_info,
-endif
+release: compile
+	cd rel && ../rebar generate && tar -cjf xkeam.tar.bz2 xkeam
 
-ifdef TEST
-EXTRA_OPTS:=$(EXTRA_OPTS) {d,'TEST', true},
-endif
+DIALYZER_APPS = kernel stdlib sasl erts eunit ssl tools crypto \
+       inets public_key syntax_tools compiler
 
-ifndef PRE17
-EXTRA_OPTS:=$(EXTRA_OPTS) {d,namespaced_types},
-endif
-
-Emakefile: Emakefile.src
-	sed "s/{{EXTRA_OPTS}}/$(EXTRA_OPTS)/" $< > $@
-
+include tools.mk

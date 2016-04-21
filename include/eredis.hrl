@@ -21,7 +21,7 @@
 -ifdef(namespaced_types).
 -type eredis_queue() :: queue:queue().
 -else.
--type eredis_queue() :: queue().
+-type eredis_queue() :: queue:queue().
 -endif.
 
 %% Internal parser state. Is returned from parse/2 and must be
