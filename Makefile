@@ -4,7 +4,6 @@ REBAR := $(shell which ./rebar || which rebar)
 all: deps compile
 
 compile: deps
-	./amqp.sh
 	$(REBAR) compile
 
 deps:
@@ -17,7 +16,6 @@ clean:
 	rm -f ./erl_crash.dump
 	rm -rf ./.eunit
 	rm -f ./test/*.beam
-	rm -rf ./rel/bs_selector
 
 distclean: clean
 	$(REBAR) delete-deps
