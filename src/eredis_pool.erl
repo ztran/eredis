@@ -127,10 +127,14 @@ handle_info(check_psize,#eredis_pool_st{type = Type,args = Args,conns = Cons,psi
 	end,
     {noreply,State#eredis_pool_st{conns = L}};
 
-handle_info({'EXIT',Pid,_},#eredis_pool_st{conns = Cons,ptr = Ptr,t_reconnect = Reconnect} = State) ->
+handle_info({'EXIT',Pid,_},#eredis_pool_st{conns = Cons,ptr = Ptr,t_reconnect = Reconnect,psize = PSize} = State) ->
 	?NOTICE("maybe connection ~p is dead",[Pid]),
-	erlang:send_after(Reconnect,self(),check_psize),
 	Cons1 = lists:delete(Pid,Cons),
+	if length(Cons) == PSize andalso length(Cons1) < PSize ->
+		   erlang:send_after(Reconnect,self(),check_psize);
+	   true ->
+		   ignore
+	end,
 	Ptr1 = if Ptr > length(Cons1) -> 1;
 			  true -> Ptr
 		   end,
